@@ -17,6 +17,7 @@
   let viewingEstudiante = null;
   let searchTerm = '';
   let filterLevel = 'Todos los niveles';
+  let gestionActual = new Date().getFullYear().toString();
 
   onMount(() => {
     loadEstudiantes();
@@ -27,7 +28,8 @@
     $error = null;
     try {
       const data = await api.getEstudiantes();
-      $estudiantes = data;
+      // Simular estado activo/inactivo en frontend (por defecto todos activos)
+      $estudiantes = data.map(e => ({ ...e, estado: e.estado || 'activo' }));
     } catch (err) {
       $error = err.message;
     } finally {
@@ -120,6 +122,21 @@
     }
   }
 
+  function handleToggleEstado(event) {
+    const idEstudiante = event.detail;
+    $estudiantes = $estudiantes.map(e => {
+      if (e.id_estudiante === idEstudiante) {
+        const nuevoEstado = e.estado === 'activo' ? 'inactivo' : 'activo';
+        $success = `Estudiante ${nuevoEstado === 'activo' ? 'habilitado' : 'deshabilitado'} exitosamente`;
+        setTimeout(() => {
+          $success = null;
+        }, 3000);
+        return { ...e, estado: nuevoEstado };
+      }
+      return e;
+    });
+  }
+
   $: filteredEstudiantes = $estudiantes.filter(est => {
     const search = searchTerm.toLowerCase();
     return (
@@ -175,6 +192,17 @@
           </div>
           <div class="filter-wrapper">
             <svg class="filter-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M3 3h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2"/>
+              <path d="M3 9h14M9 3v4M15 3v4" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <select class="filter-select" bind:value={gestionActual}>
+              <option value="{(new Date().getFullYear() - 1).toString()}">{new Date().getFullYear() - 1}</option>
+              <option value="{new Date().getFullYear().toString()}">{new Date().getFullYear()}</option>
+              <option value="{(new Date().getFullYear() + 1).toString()}">{new Date().getFullYear() + 1}</option>
+            </select>
+          </div>
+          <div class="filter-wrapper">
+            <svg class="filter-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M2 4h16M5 10h10M8 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
             <select class="filter-select" bind:value={filterLevel}>
@@ -201,9 +229,11 @@
         {:else}
           <EstudiantesList 
             estudiantes={filteredEstudiantes}
+            gestionActual={gestionActual}
             on:view={openDetailModal}
             on:edit={openEditModal}
             on:delete={handleDelete}
+            on:toggleEstado={handleToggleEstado}
           />
         {/if}
 

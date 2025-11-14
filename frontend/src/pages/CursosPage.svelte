@@ -5,10 +5,14 @@
   import CursosList from '../components/cursos/CursosList.svelte';
   import CursoForm from '../components/cursos/CursoForm.svelte';
   import CursoDetail from '../components/cursos/CursoDetail.svelte';
+  import ExportarCursos from '../components/cursos/ExportarCursos.svelte';
+  import CopiarEstudiantes from '../components/cursos/CopiarEstudiantes.svelte';
   import Modal from '../components/Modal.svelte';
 
   let showModal = false;
   let showDetailModal = false;
+  let showExportarModal = false;
+  let showCopiarModal = false;
   let editingCurso = null;
   let viewingCurso = null;
   let searchTerm = '';
@@ -167,9 +171,17 @@
       <h1 class="page-title">Gestión de Cursos</h1>
       <p class="page-subtitle">Administra los cursos del sistema educativo</p>
     </div>
-    <button class="btn-nuevo" on:click={openCreateModal}>
-      + Nuevo Curso
-    </button>
+    <div class="header-buttons">
+      <button class="btn-secondary" on:click={() => showExportarModal = true}>
+        📊 Exportar Cursos
+      </button>
+      <button class="btn-secondary" on:click={() => showCopiarModal = true}>
+        👥 Copiar Estudiantes
+      </button>
+      <button class="btn-nuevo" on:click={openCreateModal}>
+        + Nuevo Curso
+      </button>
+    </div>
   </div>
 
   <div class="search-filter-bar">
@@ -259,6 +271,16 @@
       />
     {/if}
   </Modal>
+
+  <ExportarCursos 
+    show={showExportarModal}
+    on:close={() => showExportarModal = false}
+  />
+
+  <CopiarEstudiantes 
+    show={showCopiarModal}
+    on:close={() => showCopiarModal = false}
+  />
 </div>
 
 <style>
@@ -305,6 +327,11 @@
     margin: 0;
   }
 
+  .header-buttons {
+    display: flex;
+    gap: 0.75rem;
+  }
+
   .btn-nuevo {
     background-color: #27C5DA;
     color: white;
@@ -322,6 +349,25 @@
     background-color: #1fb5c9;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(39, 197, 218, 0.3);
+  }
+
+  .btn-secondary {
+    background-color: #7A95D9;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(122, 149, 217, 0.2);
+  }
+
+  .btn-secondary:hover {
+    background-color: #6a85c9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(122, 149, 217, 0.3);
   }
 
   .search-filter-bar {

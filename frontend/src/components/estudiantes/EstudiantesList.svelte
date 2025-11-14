@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   
   export let estudiantes = [];
+  export let gestionActual = new Date().getFullYear().toString();
 
   const dispatch = createEventDispatcher();
 
@@ -34,22 +35,34 @@
     dispatch('edit', estudiante);
   }
 
-  function handleDelete(id, nombre) {
-    if (confirm(`¿Estás seguro de eliminar a ${nombre}?`)) {
-      dispatch('delete', id);
+  function handleToggleEstado(estudiante) {
+    const accion = estudiante.estado === 'activo' ? 'deshabilitar' : 'habilitar';
+    if (confirm(`¿Estás seguro de ${accion} a ${estudiante.nombres} ${estudiante.apellido_paterno}?`)) {
+      dispatch('toggleEstado', estudiante.id_estudiante);
     }
   }
 
-  function getCursosInfo(estudiante) {
+  function getCursosGestionActual(estudiante) {
     if (!estudiante.cursos || estudiante.cursos.length === 0) {
-      return { nombre: 'Sin curso asignado', nivel: '' };
+      return [];
     }
-    const curso = estudiante.cursos[0];
+    return estudiante.cursos.filter(c => c.gestion === gestionActual);
+  }
+
+  function getCursosInfo(estudiante) {
+    const cursosGestion = getCursosGestionActual(estudiante);
+    if (cursosGestion.length === 0) {
+      return { nombre: 'Sin curso asignado', nivel: '', gestion: '' };
+    }
+    const curso = cursosGestion[0];
     return {
       nombre: curso.nombre_curso,
-      nivel: curso.nivel
+      nivel: curso.nivel,
+      gestion: curso.gestion,
+      cantidad: cursosGestion.length
     };
   }
+
 </script>
 
 <div class="estudiantes-container">
@@ -57,7 +70,7 @@
   
   <div class="estudiantes-list">
     {#each estudiantes as estudiante, index (estudiante.id_estudiante)}
-      <div class="estudiante-item">
+      <div class="estudiante-item" class:deshabilitado={estudiante.estado === 'inactivo'}>
         <div class="estudiante-info">
           <div class="avatar" style="background-color: {getAvatarColor(index)}">
             {getInitials(estudiante.nombres, estudiante.apellido_paterno)}
@@ -66,16 +79,20 @@
           <div class="estudiante-details">
             <div class="estudiante-name">
               {estudiante.nombres} {estudiante.apellido_paterno} {estudiante.apellido_materno}
+              {#if estudiante.estado === 'inactivo'}
+                <span class="badge badge-inactivo">Inactivo</span>
+              {/if}
             </div>
             <div class="estudiante-meta">
-              {#if estudiante.cursos && estudiante.cursos.length > 0}
+              {#if getCursosGestionActual(estudiante).length > 0}
                 <span class="badge badge-curso">{getCursosInfo(estudiante).nombre}</span>
                 <span class="badge badge-nivel">{getCursosInfo(estudiante).nivel}</span>
-                {#if estudiante.cursos.length > 1}
-                  <span class="badge badge-count">+{estudiante.cursos.length - 1} más</span>
+                <span class="badge badge-gestion">Gestión {getCursosInfo(estudiante).gestion}</span>
+                {#if getCursosInfo(estudiante).cantidad > 1}
+                  <span class="badge badge-count">+{getCursosInfo(estudiante).cantidad - 1} más</span>
                 {/if}
               {:else}
-                <span class="badge badge-sin-curso">Sin curso asignado</span>
+                <span class="badge badge-sin-curso">Sin curso en gestión {gestionActual}</span>
               {/if}
             </div>
           </div>
@@ -93,15 +110,18 @@
             class="btn-action btn-edit" 
             on:click={() => handleEdit(estudiante)}
             title="Editar"
+            disabled={estudiante.estado === 'inactivo'}
           >
             Editar
           </button>
           <button 
-            class="btn-action btn-delete" 
-            on:click={() => handleDelete(estudiante.id_estudiante, `${estudiante.nombres} ${estudiante.apellido_paterno}`)}
-            title="Eliminar"
+            class="btn-action" 
+            class:btn-delete={estudiante.estado === 'activo'}
+            class:btn-enable={estudiante.estado === 'inactivo'}
+            on:click={() => handleToggleEstado(estudiante)}
+            title={estudiante.estado === 'activo' ? 'Deshabilitar' : 'Habilitar'}
           >
-            Eliminar
+            {estudiante.estado === 'activo' ? 'Deshabilitar' : 'Habilitar'}
           </button>
         </div>
       </div>
@@ -140,9 +160,18 @@
     transition: all 0.2s;
   }
 
+  .estudiante-item.deshabilitado {
+    opacity: 0.6;
+    background-color: #f9fafb;
+  }
+
   .estudiante-item:hover {
     background-color: #f0fdff;
     border-left-color: #27C5DA;
+  }
+
+  .estudiante-item.deshabilitado:hover {
+    background-color: #f3f4f6;
   }
 
   .estudiante-info {
@@ -210,6 +239,17 @@
     color: #EF5C52;
   }
 
+  .badge-gestion {
+    background-color: #e0f2fe;
+    color: #075985;
+  }
+
+  .badge-inactivo {
+    background-color: #fef3c7;
+    color: #92400e;
+    margin-left: 0.5rem;
+  }
+
   .estudiante-actions {
     display: flex;
     gap: 0.5rem;
@@ -223,6 +263,11 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+  }
+
+  .btn-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-view {
@@ -240,7 +285,7 @@
     color: white;
   }
 
-  .btn-edit:hover {
+  .btn-edit:hover:not(:disabled) {
     background-color: #6a85c9;
     transform: translateY(-1px);
   }
@@ -252,6 +297,16 @@
 
   .btn-delete:hover {
     background-color: #d94942;
+    transform: translateY(-1px);
+  }
+
+  .btn-enable {
+    background-color: #10b981;
+    color: white;
+  }
+
+  .btn-enable:hover {
+    background-color: #059669;
     transform: translateY(-1px);
   }
 

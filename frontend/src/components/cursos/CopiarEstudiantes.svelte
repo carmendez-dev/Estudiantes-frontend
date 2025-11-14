@@ -7,17 +7,12 @@
   
   const dispatch = createEventDispatcher();
   
-  let cursoOrigenId = '';
-  let cursoDestinoId = '';
-  let cursosOrigen = [];
-  let cursosDestino = [];
-  let estudiantesOrigen = [];
-  let estudiantesSeleccionados = [];
+  let cursoSeleccionadoId = '';
+  let cursos = [];
+  let estudiantes = [];
   let loading = false;
   let error = null;
-  let success = null;
-  let gestionOrigen = '';
-  let gestionDestino = '';
+  let gestionSeleccionada = '';
   let availableGestiones = [];
 
   function generateGestiones() {
@@ -31,25 +26,12 @@
 
   generateGestiones();
 
-  async function cargarCursosOrigen() {
-    if (!gestionOrigen) return;
+  async function cargarCursos() {
+    if (!gestionSeleccionada) return;
     
     loading = true;
     try {
-      cursosOrigen = await cursosApi.getCursos(0, 1000, null, gestionOrigen);
-    } catch (err) {
-      error = err.message;
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function cargarCursosDestino() {
-    if (!gestionDestino) return;
-    
-    loading = true;
-    try {
-      cursosDestino = await cursosApi.getCursos(0, 1000, null, gestionDestino);
+      cursos = await cursosApi.getCursos(0, 1000, null, gestionSeleccionada);
     } catch (err) {
       error = err.message;
     } finally {
@@ -58,8 +40,8 @@
   }
 
   async function cargarEstudiantes() {
-    if (!cursoOrigenId) {
-      error = 'Selecciona un curso de origen';
+    if (!cursoSeleccionadoId) {
+      error = 'Selecciona un curso';
       return;
     }
 
@@ -67,9 +49,9 @@
     error = null;
     
     try {
-      const estudiantes = await asignacionesApi.getEstudiantesDeCurso(cursoOrigenId);
-      estudiantesOrigen = estudiantes;
-      estudiantesSeleccionados = estudiantes.map(e => e.id_estudiante);
+      const data = await asignacionesApi.getEstudiantesDeCurso(cursoSeleccionadoId);
+      // Filtrar solo estudiantes activos/habilitados
+      estudiantes = data.filter(e => e.estado !== 'inactivo');
     } catch (err) {
       error = err.message;
     } finally {
@@ -77,85 +59,35 @@
     }
   }
 
-  function toggleEstudiante(idEstudiante) {
-    if (estudiantesSeleccionados.includes(idEstudiante)) {
-      estudiantesSeleccionados = estudiantesSeleccionados.filter(id => id !== idEstudiante);
-    } else {
-      estudiantesSeleccionados = [...estudiantesSeleccionados, idEstudiante];
-    }
-  }
+  function copiarAlPortapapeles() {
+    if (estudiantes.length === 0) return;
 
-  function seleccionarTodos() {
-    estudiantesSeleccionados = estudiantesOrigen.map(e => e.id_estudiante);
-  }
-
-  function deseleccionarTodos() {
-    estudiantesSeleccionados = [];
-  }
-
-  async function copiarEstudiantes() {
-    if (!cursoDestinoId) {
-      error = 'Selecciona un curso de destino';
-      return;
-    }
-
-    if (estudiantesSeleccionados.length === 0) {
-      error = 'Selecciona al menos un estudiante';
-      return;
-    }
-
-    loading = true;
-    error = null;
-    success = null;
-
-    try {
-      let exitosos = 0;
-      let fallidos = 0;
-
-      for (const idEstudiante of estudiantesSeleccionados) {
-        try {
-          await asignacionesApi.asignarEstudiante(idEstudiante, parseInt(cursoDestinoId));
-          exitosos++;
-        } catch (err) {
-          fallidos++;
-          console.error(`Error asignando estudiante ${idEstudiante}:`, err);
-        }
-      }
-
-      success = `Se copiaron ${exitosos} estudiantes exitosamente.`;
-      if (fallidos > 0) {
-        success += ` ${fallidos} ya estaban asignados o hubo errores.`;
-      }
-
-      setTimeout(() => {
-        close();
-      }, 2000);
-    } catch (err) {
-      error = err.message;
-    } finally {
-      loading = false;
-    }
+    const texto = estudiantes.map(e => 
+      `${e.id_estudiante}\t${e.nombres} ${e.apellido_paterno} ${e.apellido_materno}`
+    ).join('\n');
+    
+    navigator.clipboard.writeText(texto).then(() => {
+      alert('Lista de estudiantes copiada al portapapeles. Puedes pegarla en Excel o donde necesites.');
+    }).catch(err => {
+      console.error('Error al copiar:', err);
+    });
   }
 
   function close() {
     dispatch('close');
     // Reset
-    cursoOrigenId = '';
-    cursoDestinoId = '';
-    estudiantesOrigen = [];
-    estudiantesSeleccionados = [];
+    cursoSeleccionadoId = '';
+    estudiantes = [];
     error = null;
-    success = null;
   }
 
-  $: cursoOrigenId, cargarEstudiantes();
 </script>
 
 {#if show}
   <div class="modal-overlay" on:click={close}>
     <div class="modal-content" on:click|stopPropagation>
       <div class="modal-header">
-        <h2>Copiar Estudiantes a Nuevo Curso</h2>
+        <h2>Ver Estudiantes Habilitados de un Curso</h2>
         <button class="close-btn" on:click={close}>&times;</button>
       </div>
 
@@ -164,15 +96,16 @@
           <div class="alert alert-error">{error}</div>
         {/if}
 
-        {#if success}
-          <div class="alert alert-success">{success}</div>
-        {/if}
+        <div class="info-box">
+          <p>📋 Esta lista muestra el ID y nombre de todos los estudiantes habilitados del curso seleccionado.</p>
+          <p>Puedes copiar esta información para registrarlos en otro curso.</p>
+        </div>
 
         <div class="section">
-          <h3>1. Seleccionar Curso de Origen</h3>
+          <h3>Seleccionar Curso</h3>
           <div class="form-group">
-            <label>Gestión de Origen:</label>
-            <select bind:value={gestionOrigen} on:change={cargarCursosOrigen}>
+            <label>Gestión:</label>
+            <select bind:value={gestionSeleccionada} on:change={cargarCursos}>
               <option value="">-- Selecciona gestión --</option>
               {#each availableGestiones as year}
                 <option value={year}>{year}</option>
@@ -180,12 +113,12 @@
             </select>
           </div>
 
-          {#if cursosOrigen.length > 0}
+          {#if cursos.length > 0}
             <div class="form-group">
-              <label>Curso de Origen:</label>
-              <select bind:value={cursoOrigenId}>
+              <label>Curso:</label>
+              <select bind:value={cursoSeleccionadoId} on:change={cargarEstudiantes}>
                 <option value="">-- Selecciona curso --</option>
-                {#each cursosOrigen as curso}
+                {#each cursos as curso}
                   <option value={curso.id_curso}>
                     {curso.nombre_curso} - {curso.nivel}
                   </option>
@@ -195,66 +128,36 @@
           {/if}
         </div>
 
-        {#if estudiantesOrigen.length > 0}
+        {#if loading}
+          <div class="loading">Cargando estudiantes...</div>
+        {/if}
+
+        {#if estudiantes.length > 0}
           <div class="section">
-            <div class="section-header">
-              <h3>2. Seleccionar Estudiantes ({estudiantesSeleccionados.length}/{estudiantesOrigen.length})</h3>
-              <div class="selection-buttons">
-                <button class="btn-small" on:click={seleccionarTodos}>Todos</button>
-                <button class="btn-small" on:click={deseleccionarTodos}>Ninguno</button>
-              </div>
-            </div>
+            <h3>Estudiantes Habilitados ({estudiantes.length})</h3>
 
             <div class="estudiantes-list">
-              {#each estudiantesOrigen as estudiante}
-                <label class="estudiante-item">
-                  <input 
-                    type="checkbox" 
-                    checked={estudiantesSeleccionados.includes(estudiante.id_estudiante)}
-                    on:change={() => toggleEstudiante(estudiante.id_estudiante)}
-                  />
-                  <span>{estudiante.nombres} {estudiante.apellido_paterno} {estudiante.apellido_materno}</span>
-                </label>
+              <div class="list-header">
+                <span class="col-id">ID</span>
+                <span class="col-nombre">Nombre Completo</span>
+              </div>
+              {#each estudiantes as estudiante}
+                <div class="estudiante-item">
+                  <span class="estudiante-id">{estudiante.id_estudiante}</span>
+                  <span class="estudiante-nombre">
+                    {estudiante.nombres} {estudiante.apellido_paterno} {estudiante.apellido_materno}
+                  </span>
+                </div>
               {/each}
             </div>
-          </div>
 
-          <div class="section">
-            <h3>3. Seleccionar Curso de Destino</h3>
-            <div class="form-group">
-              <label>Gestión de Destino:</label>
-              <select bind:value={gestionDestino} on:change={cargarCursosDestino}>
-                <option value="">-- Selecciona gestión --</option>
-                {#each availableGestiones as year}
-                  <option value={year}>{year}</option>
-                {/each}
-              </select>
-            </div>
-
-            {#if cursosDestino.length > 0}
-              <div class="form-group">
-                <label>Curso de Destino:</label>
-                <select bind:value={cursoDestinoId}>
-                  <option value="">-- Selecciona curso --</option>
-                  {#each cursosDestino as curso}
-                    <option value={curso.id_curso}>
-                      {curso.nombre_curso} - {curso.nivel}
-                    </option>
-                  {/each}
-                </select>
-              </div>
-            {/if}
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn-secondary" on:click={close}>Cancelar</button>
-            <button 
-              class="btn-primary" 
-              on:click={copiarEstudiantes}
-              disabled={loading || !cursoDestinoId || estudiantesSeleccionados.length === 0}
-            >
-              {loading ? 'Copiando...' : `Copiar ${estudiantesSeleccionados.length} Estudiantes`}
+            <button class="btn-copy" on:click={copiarAlPortapapeles}>
+              📋 Copiar Lista al Portapapeles
             </button>
+          </div>
+        {:else if cursoSeleccionadoId && !loading}
+          <div class="empty-message">
+            No hay estudiantes habilitados en este curso.
           </div>
         {/if}
       </div>
@@ -280,7 +183,7 @@
     background: white;
     border-radius: 12px;
     width: 90%;
-    max-width: 700px;
+    max-width: 650px;
     max-height: 85vh;
     overflow-y: auto;
   }
@@ -320,14 +223,18 @@
     padding: 1.5rem;
   }
 
-  .modal-footer {
-    display: flex;
-    gap: 1rem;
-    padding: 1.5rem;
-    border-top: 1px solid #e5e7eb;
-    position: sticky;
-    bottom: 0;
-    background: white;
+  .info-box {
+    background-color: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 6px;
+  }
+
+  .info-box p {
+    margin: 0.25rem 0;
+    color: #1e40af;
+    font-size: 0.9rem;
   }
 
   .section {
@@ -341,22 +248,6 @@
     margin: 0 0 1rem 0;
     font-size: 1.1rem;
     color: #1f2937;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .section-header h3 {
-    margin: 0;
-  }
-
-  .selection-buttons {
-    display: flex;
-    gap: 0.5rem;
   }
 
   .form-group {
@@ -384,94 +275,92 @@
     background-color: white;
   }
 
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .empty-message {
+    text-align: center;
+    padding: 2rem;
+    color: #9ca3af;
+    font-style: italic;
+  }
+
   .estudiantes-list {
-    max-height: 300px;
+    max-height: 350px;
     overflow-y: auto;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     background: white;
-    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .list-header {
+    display: flex;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 600;
+    color: #374151;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .col-id {
+    width: 80px;
+  }
+
+  .col-nombre {
+    flex: 1;
   }
 
   .estudiante-item {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
     padding: 0.75rem;
     border-bottom: 1px solid #f3f4f6;
-    cursor: pointer;
     transition: background 0.2s;
   }
 
   .estudiante-item:hover {
-    background: #f9fafb;
+    background-color: #f9fafb;
   }
 
   .estudiante-item:last-child {
     border-bottom: none;
   }
 
-  .estudiante-item input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+  .estudiante-id {
+    width: 80px;
+    font-weight: 600;
+    color: #6b7280;
   }
 
-  .estudiante-item span {
+  .estudiante-nombre {
     flex: 1;
     color: #1f2937;
   }
 
-  .btn-small {
-    padding: 0.4rem 0.8rem;
-    background-color: #e5e7eb;
-    color: #374151;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-small:hover {
-    background-color: #d1d5db;
-  }
-
-  .btn-primary {
-    flex: 1;
-    padding: 0.75rem 1.5rem;
-    background-color: #27C5DA;
+  .btn-copy {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #10b981;
     color: white;
     border: none;
     border-radius: 8px;
     font-weight: 600;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s;
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background-color: #1fb5c9;
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-secondary {
-    padding: 0.75rem 1.5rem;
-    background-color: #f3f4f6;
-    color: #374151;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-secondary:hover {
-    background-color: #e5e7eb;
+  .btn-copy:hover {
+    background-color: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
   }
 
   .alert {
@@ -484,12 +373,6 @@
     background-color: #fee;
     color: #EF5C52;
     border-left: 4px solid #EF5C52;
-  }
-
-  .alert-success {
-    background-color: #efe;
-    color: #3AC0B8;
-    border-left: 4px solid #3AC0B8;
   }
 </style>
 

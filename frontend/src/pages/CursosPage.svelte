@@ -173,10 +173,10 @@
     </div>
     <div class="header-buttons">
       <button class="btn-secondary" on:click={() => showExportarModal = true}>
-        📊 Exportar Cursos
+        Exportar Cursos
       </button>
       <button class="btn-secondary" on:click={() => showCopiarModal = true}>
-        👥 Copiar Estudiantes
+        Ver Estudiantes
       </button>
       <button class="btn-nuevo" on:click={openCreateModal}>
         + Nuevo Curso

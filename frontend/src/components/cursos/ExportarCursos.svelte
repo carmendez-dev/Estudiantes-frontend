@@ -43,36 +43,16 @@
     }
   }
 
-  function exportarCSV() {
+  function copiarAlPortapapeles() {
     if (cursos.length === 0) return;
 
-    const headers = ['Nombre del Curso', 'Nivel', 'Gestión'];
-    const rows = cursos.map(c => [c.nombre_curso, c.nivel, c.gestion]);
+    const texto = cursos.map(c => `${c.nombre_curso}\t${c.nivel}`).join('\n');
     
-    let csvContent = headers.join(',') + '\n';
-    csvContent += rows.map(row => row.join(','.replace(',', '\\,'))).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `cursos_${selectedGestion}.csv`;
-    link.click();
-  }
-
-  function exportarJSON() {
-    if (cursos.length === 0) return;
-
-    const exportData = cursos.map(c => ({
-      nombre_curso: c.nombre_curso,
-      nivel: c.nivel,
-      gestion: c.gestion
-    }));
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `cursos_${selectedGestion}.json`;
-    link.click();
+    navigator.clipboard.writeText(texto).then(() => {
+      alert('Lista de cursos copiada al portapapeles. Puedes pegarla en Excel o donde necesites.');
+    }).catch(err => {
+      console.error('Error al copiar:', err);
+    });
   }
 
   function close() {
@@ -110,7 +90,17 @@
         {#if cursos.length > 0}
           <div class="resultados">
             <h3>Cursos encontrados: {cursos.length}</h3>
+            
+            <div class="info-box">
+              <p>📋 Esta lista muestra todos los cursos de la gestión seleccionada.</p>
+              <p>Puedes copiar esta información y pegarla en Excel o donde necesites registrar los nuevos cursos.</p>
+            </div>
+
             <div class="cursos-list">
+              <div class="list-header">
+                <span class="col-nombre">Nombre del Curso</span>
+                <span class="col-nivel">Nivel</span>
+              </div>
               {#each cursos as curso}
                 <div class="curso-item">
                   <span class="curso-nombre">{curso.nombre_curso}</span>
@@ -119,14 +109,9 @@
               {/each}
             </div>
 
-            <div class="export-buttons">
-              <button class="btn-export" on:click={exportarCSV}>
-                📊 Exportar como CSV
-              </button>
-              <button class="btn-export" on:click={exportarJSON}>
-                📄 Exportar como JSON
-              </button>
-            </div>
+            <button class="btn-copy" on:click={copiarAlPortapapeles}>
+              📋 Copiar Lista al Portapapeles
+            </button>
           </div>
         {/if}
       </div>
@@ -249,13 +234,50 @@
     color: #1f2937;
   }
 
+  .info-box {
+    background-color: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+  }
+
+  .info-box p {
+    margin: 0.25rem 0;
+    color: #1e40af;
+    font-size: 0.9rem;
+  }
+
   .cursos-list {
-    max-height: 300px;
+    max-height: 350px;
     overflow-y: auto;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    padding: 0.5rem;
     margin-bottom: 1rem;
+    background: white;
+  }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 600;
+    color: #374151;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .col-nombre {
+    flex: 1;
+  }
+
+  .col-nivel {
+    width: 120px;
+    text-align: center;
   }
 
   .curso-item {
@@ -264,6 +286,11 @@
     align-items: center;
     padding: 0.75rem;
     border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s;
+  }
+
+  .curso-item:hover {
+    background-color: #f9fafb;
   }
 
   .curso-item:last-child {
@@ -271,6 +298,7 @@
   }
 
   .curso-nombre {
+    flex: 1;
     font-weight: 500;
     color: #1f2937;
   }
@@ -298,25 +326,22 @@
     color: #1e40af;
   }
 
-  .export-buttons {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .btn-export {
-    flex: 1;
+  .btn-copy {
+    width: 100%;
     padding: 0.75rem;
-    background-color: #7A95D9;
+    background-color: #10b981;
     color: white;
     border: none;
     border-radius: 8px;
     font-weight: 600;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s;
   }
 
-  .btn-export:hover {
-    background-color: #6a85c9;
+  .btn-copy:hover {
+    background-color: #059669;
     transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
   }
 </style>

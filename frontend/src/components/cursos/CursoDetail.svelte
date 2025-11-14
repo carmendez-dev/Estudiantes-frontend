@@ -1,11 +1,13 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import AsignarEstudiantes from './AsignarEstudiantes.svelte';
+  import AsignarEstudiantesMasivo from './AsignarEstudiantesMasivo.svelte';
   
   export let curso;
 
   const dispatch = createEventDispatcher();
   let activeTab = 'info';
+  let showAsignarMasivoModal = false;
 
   function handleClose() {
     dispatch('close');
@@ -139,9 +141,23 @@
       {/if}
     </div>
     {:else if activeTab === 'estudiantes'}
-      <AsignarEstudiantes {curso} on:updated={() => dispatch('updated')} />
+      <div class="estudiantes-tab">
+        <div class="tab-header">
+          <h3>Gestión de Estudiantes</h3>
+          <button class="btn-masivo" on:click={() => showAsignarMasivoModal = true}>
+            Asignar Masivamente
+          </button>
+        </div>
+        <AsignarEstudiantes {curso} on:updated={() => dispatch('updated')} />
+      </div>
     {/if}
   </div>
+
+  <AsignarEstudiantesMasivo 
+    show={showAsignarMasivoModal}
+    on:close={() => showAsignarMasivoModal = false}
+    on:success={() => dispatch('updated')}
+  />
 </div>
 
 <style>
@@ -385,6 +401,43 @@
   .btn-action-tab.active {
     color: #27C5DA;
     border-bottom-color: #27C5DA;
+  }
+
+  .estudiantes-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .tab-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1f2937;
+  }
+
+  .btn-masivo {
+    background-color: #7A95D9;
+    color: white;
+    border: none;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-masivo:hover {
+    background-color: #6a85c9;
+    transform: translateY(-1px);
   }
 
   @media (max-width: 768px) {

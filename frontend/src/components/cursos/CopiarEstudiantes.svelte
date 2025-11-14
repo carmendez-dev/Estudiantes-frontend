@@ -49,9 +49,9 @@
     error = null;
     
     try {
-      const data = await asignacionesApi.getEstudiantesDeCurso(cursoSeleccionadoId);
-      // Filtrar solo estudiantes activos/habilitados
-      estudiantes = data.filter(e => e.estado !== 'inactivo');
+      // Usar el nuevo endpoint de estudiantes habilitados
+      const data = await asignacionesApi.getEstudiantesHabilitadosDeCurso(cursoSeleccionadoId);
+      estudiantes = data;
     } catch (err) {
       error = err.message;
     } finally {
@@ -62,8 +62,9 @@
   function copiarAlPortapapeles() {
     if (estudiantes.length === 0) return;
 
+    // Formato: id_estudiante   nombre_completo
     const texto = estudiantes.map(e => 
-      `${e.id_estudiante}\t${e.nombres} ${e.apellido_paterno} ${e.apellido_materno}`
+      `${e.id_estudiante}\t${e.nombre_completo}`
     ).join('\n');
     
     navigator.clipboard.writeText(texto).then(() => {
@@ -145,7 +146,7 @@
                 <div class="estudiante-item">
                   <span class="estudiante-id">{estudiante.id_estudiante}</span>
                   <span class="estudiante-nombre">
-                    {estudiante.nombres} {estudiante.apellido_paterno} {estudiante.apellido_materno}
+                    {estudiante.nombre_completo}
                   </span>
                 </div>
               {/each}

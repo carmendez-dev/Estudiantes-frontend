@@ -21,6 +21,18 @@ export const asignacionesApi = {
     return handleResponse(response);
   },
 
+  // Asignar múltiples estudiantes a un curso (nuevo endpoint masivo)
+  async asignarEstudiantesMasivo(id_curso, ids_estudiantes) {
+    const response = await fetch(`${API_BASE_URL}/masivo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id_curso, ids_estudiantes }),
+    });
+    return handleResponse(response);
+  },
+
   // Desasignar estudiante de curso
   async desasignarEstudiante(id_estudiante, id_curso) {
     const response = await fetch(`${API_BASE_URL}/`, {
@@ -36,6 +48,12 @@ export const asignacionesApi = {
   // Obtener todos los estudiantes de un curso
   async getEstudiantesDeCurso(id_curso) {
     const response = await fetch(`${API_BASE_URL}/curso/${id_curso}/`);
+    return handleResponse(response);
+  },
+
+  // Obtener estudiantes habilitados de un curso (nuevo endpoint)
+  async getEstudiantesHabilitadosDeCurso(id_curso) {
+    const response = await fetch(`${API_BASE_URL}/curso/${id_curso}/estudiantes-habilitados`);
     return handleResponse(response);
   },
 

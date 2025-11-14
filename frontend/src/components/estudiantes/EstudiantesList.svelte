@@ -36,7 +36,7 @@
   }
 
   function handleToggleEstado(estudiante) {
-    const accion = estudiante.estado === 'activo' ? 'deshabilitar' : 'habilitar';
+    const accion = estudiante.estado_estudiante === 'habilitado' ? 'inhabilitar' : 'habilitar';
     if (confirm(`¿Estás seguro de ${accion} a ${estudiante.nombres} ${estudiante.apellido_paterno}?`)) {
       dispatch('toggleEstado', estudiante.id_estudiante);
     }
@@ -70,7 +70,7 @@
   
   <div class="estudiantes-list">
     {#each estudiantes as estudiante, index (estudiante.id_estudiante)}
-      <div class="estudiante-item" class:deshabilitado={estudiante.estado === 'inactivo'}>
+      <div class="estudiante-item" class:deshabilitado={estudiante.estado_estudiante === 'inhabilitado'}>
         <div class="estudiante-info">
           <div class="avatar" style="background-color: {getAvatarColor(index)}">
             {getInitials(estudiante.nombres, estudiante.apellido_paterno)}
@@ -79,8 +79,8 @@
           <div class="estudiante-details">
             <div class="estudiante-name">
               {estudiante.nombres} {estudiante.apellido_paterno} {estudiante.apellido_materno}
-              {#if estudiante.estado === 'inactivo'}
-                <span class="badge badge-inactivo">Inactivo</span>
+              {#if estudiante.estado_estudiante === 'inhabilitado'}
+                <span class="badge badge-inactivo">Inhabilitado</span>
               {/if}
             </div>
             <div class="estudiante-meta">
@@ -110,18 +110,18 @@
             class="btn-action btn-edit" 
             on:click={() => handleEdit(estudiante)}
             title="Editar"
-            disabled={estudiante.estado === 'inactivo'}
+            disabled={estudiante.estado_estudiante === 'inhabilitado'}
           >
             Editar
           </button>
           <button 
             class="btn-action" 
-            class:btn-delete={estudiante.estado === 'activo'}
-            class:btn-enable={estudiante.estado === 'inactivo'}
+            class:btn-delete={estudiante.estado_estudiante === 'habilitado'}
+            class:btn-enable={estudiante.estado_estudiante === 'inhabilitado'}
             on:click={() => handleToggleEstado(estudiante)}
-            title={estudiante.estado === 'activo' ? 'Deshabilitar' : 'Habilitar'}
+            title={estudiante.estado_estudiante === 'habilitado' ? 'Inhabilitar' : 'Habilitar'}
           >
-            {estudiante.estado === 'activo' ? 'Deshabilitar' : 'Habilitar'}
+            {estudiante.estado_estudiante === 'habilitado' ? 'Inhabilitar' : 'Habilitar'}
           </button>
         </div>
       </div>

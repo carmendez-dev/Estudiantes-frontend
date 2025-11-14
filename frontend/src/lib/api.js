@@ -52,4 +52,16 @@ export const api = {
     });
     return handleResponse(response);
   },
+
+  // Cambiar estado de estudiante (habilitado/inhabilitado)
+  async cambiarEstadoEstudiante(id, estado) {
+    const response = await fetch(`${API_BASE_URL}/${id}/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ estado_estudiante: estado }),
+    });
+    return handleResponse(response);
+  },
 };

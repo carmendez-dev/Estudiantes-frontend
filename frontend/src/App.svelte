@@ -28,8 +28,8 @@
     $error = null;
     try {
       const data = await api.getEstudiantes();
-      // Simular estado activo/inactivo en frontend (por defecto todos activos)
-      $estudiantes = data.map(e => ({ ...e, estado: e.estado || 'activo' }));
+      // El estado viene del backend (habilitado/inhabilitado)
+      $estudiantes = data;
     } catch (err) {
       $error = err.message;
     } finally {
@@ -122,19 +122,33 @@
     }
   }
 
-  function handleToggleEstado(event) {
+  async function handleToggleEstado(event) {
     const idEstudiante = event.detail;
-    $estudiantes = $estudiantes.map(e => {
-      if (e.id_estudiante === idEstudiante) {
-        const nuevoEstado = e.estado === 'activo' ? 'inactivo' : 'activo';
-        $success = `Estudiante ${nuevoEstado === 'activo' ? 'habilitado' : 'deshabilitado'} exitosamente`;
-        setTimeout(() => {
-          $success = null;
-        }, 3000);
-        return { ...e, estado: nuevoEstado };
-      }
-      return e;
-    });
+    $loading = true;
+    $error = null;
+    $success = null;
+
+    try {
+      // Encontrar el estudiante
+      const estudiante = $estudiantes.find(e => e.id_estudiante === idEstudiante);
+      if (!estudiante) return;
+
+      // Cambiar el estado en el backend
+      const nuevoEstado = estudiante.estado_estudiante === 'habilitado' ? 'inhabilitado' : 'habilitado';
+      await api.cambiarEstadoEstudiante(idEstudiante, nuevoEstado);
+
+      // Actualizar la lista
+      await loadEstudiantes();
+      
+      $success = `Estudiante ${nuevoEstado === 'habilitado' ? 'habilitado' : 'inhabilitado'} exitosamente`;
+      setTimeout(() => {
+        $success = null;
+      }, 3000);
+    } catch (err) {
+      $error = err.message;
+    } finally {
+      $loading = false;
+    }
   }
 
   $: filteredEstudiantes = $estudiantes.filter(est => {

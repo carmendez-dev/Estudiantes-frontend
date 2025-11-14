@@ -34,7 +34,8 @@
     error = null;
     
     try {
-      const data = await cursosApi.getCursos(0, 1000, null, selectedGestion);
+      // Usar el nuevo endpoint simplificado
+      const data = await cursosApi.getCursosPorGestion(selectedGestion);
       cursos = data;
     } catch (err) {
       error = err.message;

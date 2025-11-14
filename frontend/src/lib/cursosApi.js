@@ -19,6 +19,24 @@ export const cursosApi = {
     return handleResponse(response);
   },
 
+  // Obtener cursos simplificados de una gestión específica (nuevo endpoint)
+  async getCursosPorGestion(gestion) {
+    const response = await fetch(`${API_BASE_URL}/gestion/${gestion}`);
+    return handleResponse(response);
+  },
+
+  // Crear múltiples cursos (nuevo endpoint masivo)
+  async createCursosMasivo(cursos) {
+    const response = await fetch(`${API_BASE_URL}/masivo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ cursos }),
+    });
+    return handleResponse(response);
+  },
+
   // Obtener curso por ID
   async getCurso(id) {
     const response = await fetch(`${API_BASE_URL}/${id}/`);

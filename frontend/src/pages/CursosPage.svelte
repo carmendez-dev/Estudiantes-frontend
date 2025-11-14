@@ -7,12 +7,14 @@
   import CursoDetail from '../components/cursos/CursoDetail.svelte';
   import ExportarCursos from '../components/cursos/ExportarCursos.svelte';
   import CopiarEstudiantes from '../components/cursos/CopiarEstudiantes.svelte';
+  import RegistrarCursosMasivo from '../components/cursos/RegistrarCursosMasivo.svelte';
   import Modal from '../components/Modal.svelte';
 
   let showModal = false;
   let showDetailModal = false;
   let showExportarModal = false;
   let showCopiarModal = false;
+  let showRegistrarMasivoModal = false;
   let editingCurso = null;
   let viewingCurso = null;
   let searchTerm = '';
@@ -175,6 +177,9 @@
       <button class="btn-secondary" on:click={() => showExportarModal = true}>
         Exportar Cursos
       </button>
+      <button class="btn-secondary" on:click={() => showRegistrarMasivoModal = true}>
+        Registrar Masivo
+      </button>
       <button class="btn-secondary" on:click={() => showCopiarModal = true}>
         Ver Estudiantes
       </button>
@@ -275,6 +280,12 @@
   <ExportarCursos 
     show={showExportarModal}
     on:close={() => showExportarModal = false}
+  />
+
+  <RegistrarCursosMasivo 
+    show={showRegistrarMasivoModal}
+    on:close={() => showRegistrarMasivoModal = false}
+    on:success={loadCursos}
   />
 
   <CopiarEstudiantes 
